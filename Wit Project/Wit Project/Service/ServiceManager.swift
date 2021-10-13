@@ -9,12 +9,11 @@ import Foundation
 
 class ServiceManager{
     static let shared = ServiceManager()
-    let configuration: URLSessionConfiguration
-    let session: URLSession
-    let urlString = "https://api.github.com/users"
+    private let configuration: URLSessionConfiguration
+    private let session: URLSession
+    private let urlString = "https://api.github.com/users"
     private var imageCache = NSCache <NSString, NSData>()
     private var userInfoCache = NSCache <NSString , InfoUserObject>()
-    
     
     private init() {
         configuration = URLSessionConfiguration.default
@@ -22,7 +21,7 @@ class ServiceManager{
     }
     
     //MARK: - User List
-    func getUserListFromService (completion: @escaping ([UsersObject]) -> (Void)) {
+    func getUserListFromService (completion: @escaping (Result<[UsersObject], Error>) -> (Void)) {
         let url = URL(string:urlString)
         
         guard let url = url else {
@@ -34,52 +33,33 @@ class ServiceManager{
         
         let task = session.dataTask(with: request) {data,response,error in
             if let error = error{
-                print("""
-                    #############   Error ############
-                    Erro na chamada do serviço
-                    \(error.localizedDescription)
-                    #############   Error ############
-                    """)
+                completion(.failure(error))
                 return
             }
             
             guard let response = response as? HTTPURLResponse else {
-                print("""
-                    #############   Error ############
-                    Erro no Response
-                    \(response.debugDescription)
-                    #############   Error ############
-                    """)
+                let error = NSError(domain: "", code: 999, userInfo: nil)
+                completion(.failure(error))
                 return
             }
             
             guard (200...299).contains(response.statusCode) else {
-                print("""
-                    #############   Error ############
-                    \(response.statusCode)
-                    #############   Error ############
-                    """)
+                let error = NSError(domain: "", code: response.statusCode, userInfo: nil)
+                completion(.failure(error))
                 return
             }
             
             guard let data = data else {
-                print("""
-                    #############   Error ############
-                    Não está a retornar dados.
-                    #############   Error ############
-                    """)
+                let error = NSError(domain: "", code: 998, userInfo:nil)
+                completion(.failure(error))
                 return
             }
             
             do {
                 let itens = try JSONDecoder().decode([UsersObject].self, from: data)
-                completion(itens)
+                completion(.success(itens))
             }catch let error{
-                print("""
-                    #############   Error ############
-                    \(error.localizedDescription)
-                    #############   Error ############
-                    """)
+                completion(.failure(error))
             }
         }
         
@@ -87,10 +67,9 @@ class ServiceManager{
     }
     
     //MARK: - User Info
-    func getUserInfo(userName: String, idObject: String,completion: @escaping (_ userInfo : InfoUserObject) -> Void){
-        if let infoData = self.userInfoCache.object(forKey: idObject as NSString){
-            print("Cache")
-            completion(infoData as InfoUserObject)
+    func getUserInfo(userName: String, idObject: String,completion: @escaping (Result <InfoUserObject, Error>) -> Void){
+        if let infoData = self.userInfoCache.object(forKey: idObject as NSString) as InfoUserObject?{
+            completion(.success(infoData))
             return
         }
         
@@ -105,53 +84,34 @@ class ServiceManager{
         
         let task = session.dataTask(with: request) {data,response,error in
             if let error = error{
-                print("""
-                    #############   Error ############
-                    Erro na chamada do serviço
-                    \(error.localizedDescription)
-                    #############   Error ############
-                    """)
+                completion(.failure(error))
                 return
             }
             
             guard let response = response as? HTTPURLResponse else {
-                print("""
-                    #############   Error ############
-                    Erro no Response
-                    \(response.debugDescription)
-                    #############   Error ############
-                    """)
+                let error = NSError(domain: "", code: 999, userInfo: nil)
+                completion(.failure(error))
                 return
             }
             
             guard (200...299).contains(response.statusCode) else {
-                print("""
-                    #############   Error ############
-                    \(response.statusCode)
-                    #############   Error ############
-                    """)
+                let error = NSError(domain: "", code: response.statusCode, userInfo: nil)
+                completion(.failure(error))
                 return
             }
             
             guard let data = data else {
-                print("""
-                    #############   Error ############
-                    Não está a retornar dados.
-                    #############   Error ############
-                    """)
+                let error = NSError(domain: "", code: 998, userInfo:nil)
+                completion(.failure(error))
                 return
             }
             
             do {
                 let userInfo = try JSONDecoder().decode(InfoUserObject.self, from: data)
                 self.userInfoCache.setObject(userInfo as InfoUserObject, forKey: idObject as NSString)
-                completion(userInfo)
+                completion(.success(userInfo))
             }catch let error{
-                print("""
-                    #############   Error ############
-                    \(error.localizedDescription)
-                    #############   Error ############
-                    """)
+                completion(.failure(error))
             }
         }
         
@@ -159,64 +119,44 @@ class ServiceManager{
     }
     
     //MARK: - Get Images
-    func getImageUserInfoWith(url urlImage: URL, idFile: String, completion: @escaping (_ data: Data) -> Void){
-        if let infoImageDate = self.imageCache.object(forKey: idFile as NSString){
-            print("Cache")
-            completion(infoImageDate as Data)
+    func getImageUserInfoWith(url urlImage: URL, idFile: String, completion: @escaping (Result <Data, Error>) -> Void){
+        /// if have image in cache i use this data. 
+        if let infoImageDate = self.imageCache.object(forKey: idFile as NSString) as Data?{
+            completion(.success(infoImageDate))
             return
         }
         
         let urlRequest = URLRequest(url: urlImage)
         let taks = session.downloadTask(with: urlRequest) { localURL, response, error in
             if let error = error {
-                print("""
-                    #############   Error ############
-                    Erro na chamada do serviço
-                    \(error.localizedDescription)
-                    #############   Error ############
-                    """)
+                completion(.failure(error))
                 return
             }
             
             guard let response = response as? HTTPURLResponse else {
-                print("""
-                    #############   Error ############
-                    Erro no Response
-                    \(response.debugDescription)
-                    #############   Error ############
-                    """)
+                let error = NSError(domain: "", code: 999, userInfo: nil)
+                completion(.failure(error))
                 return
             }
             
             guard (200...299).contains(response.statusCode) else {
-                print("""
-                    #############   Error ############
-                    \(response.statusCode)
-                    #############   Error ############
-                    """)
+                let error = NSError(domain: "", code: response.statusCode, userInfo: nil)
+                completion(.failure(error))
                 return
             }
             
             guard let localURL = localURL else{
-                print("""
-                    #############   Error ############
-                    Não está a retornar dados.
-                    #############   Error ############
-                    """)
+                let error = NSError(domain: "", code: 998, userInfo:nil)
+                completion(.failure(error))
                 return
             }
             
             do {
                 let data = try Data(contentsOf: localURL)
                 self.imageCache.setObject(data as NSData, forKey: idFile as NSString)
-                completion(data)
-                
+                completion(.success(data))
             }catch let error{
-                print("""
-                    #############   Error ############
-                    \(error.localizedDescription)
-                    #############   Error ############
-                    """)
+                completion(.failure(error))
             }
         }
         

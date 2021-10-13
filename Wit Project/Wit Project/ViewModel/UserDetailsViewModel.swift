@@ -7,26 +7,20 @@
 
 import UIKit
 
-//MARK: - Protocol
-protocol UserDetailsViewModelDelegate: NSObject {
-    func updateViewController()
-}
-
 //MARK: - ViewModel Properties and methods
 class UserDetailsViewModel {
     //MARK: - Properties
-    weak var delegate: UserDetailsViewModelDelegate?
-    let networker = ServiceManager.shared
+    private let serviceAPI = ServiceManager.shared
     var username: String?
     var idObject: Int?
-    var viewTitle = "User"
-    var arrayInfo = [Any]()
+    let viewTitle = "User"
+    var arrayInfo = [[String]]()
     var userInfoImage: UIImage?
 }
 
 // MARK: - Extension: Supporting Methods
 extension UserDetailsViewModel {
-    func configureArrayWith(infoUser: InfoUserObject){
+    private func configureArrayWith(infoUser: InfoUserObject){
         self.arrayInfo.append(["Name" , infoUser.login])
         
         if let company = infoUser.company {
@@ -85,26 +79,46 @@ extension UserDetailsViewModel {
 
 // MARK: - Extension: Service Methods
 extension UserDetailsViewModel {
-    func getUserInfo(){
+    func getUserInfo(completion: @escaping (Result<Void, Error>) -> Void){
         if let username = username, let idObject = idObject {
-            networker.getUserInfo(userName: username, idObject: "\(idObject)") { infoUser in
-                guard let urlImage = infoUser.avatarUrl else {
-                    return
-                }
-                self.configureArrayWith(infoUser: infoUser)
-                
-                let group = DispatchGroup()
-                group.enter()
-                
-                self.networker.getImageUserInfoWith(url: URL(string: urlImage)!, idFile: String(idObject)) { data in
-                    self.userInfoImage = UIImage(data: data)
-                    group.leave()
-                }
-                
-                group.notify(queue: .main) {
-                    self.delegate?.updateViewController()
+            serviceAPI.getUserInfo(userName: username, idObject: "\(idObject)") { result in
+                switch result {
+                case .failure(let error):
+                    completion(.failure(error))
+                    break
+                case .success(let userData):
+                    self.configureViewAndGetImages(userData, completion: {
+                        completion(.success(()))
+                    })
+                    break
                 }
             }
+        }
+    }
+    
+    private func configureViewAndGetImages(_ infoUser: InfoUserObject, completion: @escaping () -> Void ){
+        guard let urlImage = infoUser.avatarUrl else {
+            return
+        }
+        self.configureArrayWith(infoUser: infoUser)
+        
+        let group = DispatchGroup()
+        group.enter()
+        
+        self.serviceAPI.getImageUserInfoWith(url: URL(string: urlImage)!, idFile: String(idObject!)) { result in
+            switch result {
+            case .failure(_):
+                group.leave()
+                break
+            case .success(let data):
+                self.userInfoImage = UIImage(data: data)
+                group.leave()
+                break
+            }
+        }
+        
+        group.notify(queue: .main) {
+            completion()
         }
     }
 }

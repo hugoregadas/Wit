@@ -16,7 +16,6 @@ class UserDetailsViewController: UIViewController {
     let viewModel = UserDetailsViewModel()
     override func viewDidLoad() {
         super.viewDidLoad()
-        
         initUI()
     }
 }
@@ -24,14 +23,42 @@ class UserDetailsViewController: UIViewController {
 // MARK: - Extension: Supporting Methods
 extension UserDetailsViewController {
     func initUI(){
+        initTableView()
+        fetchUser()
+        title = viewModel.viewTitle
+    }
+    
+    func initTableView(){
         tableView.delegate = self
         tableView.dataSource = self
         tableView.rowHeight = UITableView.automaticDimension
         tableView.estimatedRowHeight = UITableView.automaticDimension
         tableView.register(UINib(nibName: "UserDetailsTableViewCell", bundle: nil), forCellReuseIdentifier: "UserDetailsTableViewCell")
-        viewModel.delegate = self
-        viewModel.getUserInfo()
-        title = viewModel.viewTitle
+    }
+    
+    func fetchUser(){
+        viewModel.getUserInfo { result in
+            switch result {
+            case .failure(let error):
+                self.showError(error)
+                break
+            case .success(_):
+                self.imageView.image = self.viewModel.userInfoImage
+                self.tableView.reloadData()
+                break
+            }
+        }
+    }
+    
+    func showError(_ error: Error) {
+        DispatchQueue.main.async {
+            let title = "Alerta"
+            let message = error.localizedDescription
+            let buttonTitle = "OK"
+            let alert = UIAlertController(title: title, message: message, preferredStyle: .alert)
+            alert.addAction(UIAlertAction(title: buttonTitle, style: .default, handler: nil))
+            self.present(alert, animated: true, completion: nil)
+        }
     }
 }
 
@@ -44,20 +71,11 @@ extension UserDetailsViewController : UITableViewDelegate, UITableViewDataSource
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         let cell = tableView.dequeueReusableCell(withIdentifier: "UserDetailsTableViewCell", for: indexPath) as! UserDetailsTableViewCell
         
-        let firstObject = viewModel.arrayInfo[indexPath.row] as! Array<String>
-        
-        cell.titleLabel.text = firstObject[0]
-        cell.detailLabel.text = firstObject[1]
+        cell.configureCell(viewModel: viewModel, indexPath: indexPath)
         
         return cell
     }
 }
 
-// MARK: - Extension: Delegate ViewModel
-extension UserDetailsViewController: UserDetailsViewModelDelegate {
-    func updateViewController() {
-        self.imageView.image = viewModel.userInfoImage
-        tableView.reloadData()
-    }
-}
+
 
