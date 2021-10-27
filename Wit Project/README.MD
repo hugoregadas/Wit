@@ -37,12 +37,13 @@ Esta aplicação recebe e trata informação de users de uma API Externa
 ## TODO List
 
 - [x] Fetch User from API
-- [x] Show User information
-- [ ] Pagination
-- [ ] Search User by ID
-- [ ] Search User by Name
-- [ ] Add app icon
-- [ ] Set app launch screen
+- [x] Show User information +/-
+- [x] Pagination
+- [x] Search User by Name +/-
+- [x] Add app icon
+- [x] Set app launch screen
+- [ ] Loading
+- [x] Fetch Images +/-
 - [ ] Swipe between User details (previous and next)
 - [ ] Improve readme.md with app architecture
 
