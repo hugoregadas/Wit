@@ -14,6 +14,7 @@ class ServiceManager{
     private let urlString = "https://api.github.com/users"
     private var imageCache = NSCache <NSString, NSData>()
     private var userInfoCache = NSCache <NSString , InfoUserObject>()
+    let limit: String = "10"
     
     private init() {
         configuration = URLSessionConfiguration.default
@@ -21,8 +22,8 @@ class ServiceManager{
     }
     
     //MARK: - User List
-    func getUserListFromService (completion: @escaping (Result<[UsersObject], Error>) -> (Void)) {
-        let url = URL(string:urlString)
+    func getUserListFromService(since: Int , completion: @escaping (Result<[UsersObject], Error>) -> (Void)) {
+        let url = URL(string:"\(urlString)?since=\(since)&per_page=\(limit)")
         
         guard let url = url else {
             return
@@ -72,7 +73,6 @@ class ServiceManager{
             completion(.success(infoData))
             return
         }
-        
         let url = URL(string: urlString + "/" + userName)
         
         guard let url = url else {
@@ -118,9 +118,54 @@ class ServiceManager{
         task.resume()
     }
     
+    func getUserInfo(userName: String,completion: @escaping (Result <InfoUserObject, Error>) -> Void){
+        let url = URL(string: urlString + "/" + userName)
+        
+        guard let url = url else {
+            return
+        }
+        
+        var request = URLRequest(url: url)
+        request.httpMethod = "GET"
+        
+        let task = session.dataTask(with: request) {data,response,error in
+            if let error = error{
+                completion(.failure(error))
+                return
+            }
+            
+            guard let response = response as? HTTPURLResponse else {
+                let error = NSError(domain: "", code: 999, userInfo: nil)
+                completion(.failure(error))
+                return
+            }
+            
+            guard (200...299).contains(response.statusCode) else {
+                let error = NSError(domain: "", code: response.statusCode, userInfo: nil)
+                completion(.failure(error))
+                return
+            }
+            
+            guard let data = data else {
+                let error = NSError(domain: "", code: 998, userInfo:nil)
+                completion(.failure(error))
+                return
+            }
+            
+            do {
+                let userInfo = try JSONDecoder().decode(InfoUserObject.self, from: data)
+                completion(.success(userInfo))
+            }catch let error{
+                completion(.failure(error))
+            }
+        }
+        
+        task.resume()
+    }
+    
     //MARK: - Get Images
     func getImageUserInfoWith(url urlImage: URL, idFile: String, completion: @escaping (Result <Data, Error>) -> Void){
-        /// if have image in cache i use this data. 
+        /// if have image in cache i use this data.
         if let infoImageDate = self.imageCache.object(forKey: idFile as NSString) as Data?{
             completion(.success(infoImageDate))
             return
