@@ -12,7 +12,6 @@ class ServiceManager{
     private let configuration: URLSessionConfiguration
     private let session: URLSession
     private let urlString = "https://api.github.com/users"
-    private var imageCache = NSCache <NSString, NSData>()
     private var userInfoCache = NSCache <NSString , InfoUserObject>()
     let limit: String = "10"
     
@@ -165,12 +164,6 @@ class ServiceManager{
     
     //MARK: - Get Images
     func getImageUserInfoWith(url urlImage: URL, idFile: String, completion: @escaping (Result <Data, Error>) -> Void){
-        /// if have image in cache i use this data.
-        if let infoImageDate = self.imageCache.object(forKey: idFile as NSString) as Data?{
-            completion(.success(infoImageDate))
-            return
-        }
-        
         let urlRequest = URLRequest(url: urlImage)
         let taks = session.downloadTask(with: urlRequest) { localURL, response, error in
             if let error = error {
@@ -198,7 +191,6 @@ class ServiceManager{
             
             do {
                 let data = try Data(contentsOf: localURL)
-                self.imageCache.setObject(data as NSData, forKey: idFile as NSString)
                 completion(.success(data))
             }catch let error{
                 completion(.failure(error))

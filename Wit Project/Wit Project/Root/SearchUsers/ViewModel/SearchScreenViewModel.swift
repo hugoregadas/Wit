@@ -14,16 +14,25 @@ class SearchScreenViewModel {
     private let serviceAPI = ServiceManager.shared
     
     // use to save id and image
-    private var listOfImageData = [Int: Data]()
+    private var listOfImageData = [Int: Data]() {
+        didSet {
+            if (!listOfImageData.isEmpty) {
+                self.bindViewModelToController()
+            }
+        }
+    }
     
     /// Used to save all github Users
-    var usersList =  [UsersObject]()
-    var userListFilter = [InfoUserObject]()
-    var selectedItem: UsersObject?
-    var selectedItemFilter: InfoUserObject?
-    var loginName = ""
-    var imageUser = UIImage()
-    var isFilter = false
+    private (set) var usersList =  [UsersObject]()
+    private (set) var userListFilter = [InfoUserObject]()
+    private (set) var selectedItem: UsersObject?
+    private (set) var selectedItemFilter: InfoUserObject?
+    private (set) var loginName = ""
+    private (set) var imageUser = UIImage()
+    private (set) var isFilter = false
+    
+
+    var bindViewModelToController : (() -> ()) = {}
 }
 
 // MARK: - Extension: Supporting Methods
@@ -43,6 +52,7 @@ extension SearchScreenViewModel {
         
         
         guard let data = listOfImageData[objId] else {
+            imageUser = UIImage(named: "1024")!
             return
         }
         
@@ -75,55 +85,56 @@ extension SearchScreenViewModel {
             case .success(let listOfUsers):
                 self.usersList.append(contentsOf: listOfUsers)
                 self.isFilter = false
-                self.configureViewAndGetImages(userList: self.usersList) {
-                    completion(.success(()))
+                var arrayWithAvatarURLAndUserID = [(String, Int)]()
+                for user in self.usersList {
+                    arrayWithAvatarURLAndUserID.append((user.avatarUrl!, user.idObject))
                 }
+                
+                self.configureViewAndGetImages(withArray: arrayWithAvatarURLAndUserID)
+                completion(.success(()))
                 break
             }
-        }
-    }
-    
-    // method to fetch images gitHub users
-    private func configureViewAndGetImages(userList: [UsersObject] ,completion: @escaping () -> Void){
-        /// Dispatch group used to sync all Service APi and to notify the getUserListFromService method that he can complete his task
-        let serviceGroup = DispatchGroup()
-        
-        for user in self.usersList {
-            if let url = user.avatarUrl {
-                serviceGroup.enter()
-                self.serviceAPI.getImageUserInfoWith(url: URL(string: url)!, idFile: "\(user.idObject)") { result in
-                    switch result {
-                    case .failure(_):
-                        serviceGroup.leave()
-                        break
-                    case .success(let imageData):
-                        self.listOfImageData.updateValue(imageData, forKey: user.idObject)
-                        serviceGroup.leave()
-                        break
-                    }
-                }
-            }
-        }
-        
-        serviceGroup.notify(queue: .main) {
-            completion()
         }
     }
     
     //Method to fetch user
     func getUser(WithName username: String, completion: @escaping (Result<Void, Error>) -> Void){
         serviceAPI.getUserInfo(userName: username) { result in
+            switch result {
+            case .failure(let error):
+                completion(.failure(error))
+                break
+            case .success(let userData):
+                self.isFilter = true
+                self.userListFilter = [userData]
+                var arrayWithAvatarURLAndUserID = [(String, Int)]()
+                for user in self.userListFilter {
+                    arrayWithAvatarURLAndUserID.append((user.avatarUrl!, user.idObject))
+                }
+                
+                self.configureViewAndGetImages(withArray: arrayWithAvatarURLAndUserID)
+                completion(.success(()))
+
+                break
+            }
+        }
+    }
+    
+    // method to fetch images gitHub users
+    private func configureViewAndGetImages(withArray imageInfo: [(urlAvatar: String ,userId: Int)]){
+        /// Dispatch group used to sync all Service APi and to notify the getUserListFromService method that he can complete his task
+        
+        for user in imageInfo {
+            self.serviceAPI.getImageUserInfoWith(url: URL(string: user.urlAvatar)!, idFile: "\(user.userId)") { result in
                 switch result {
-                case .failure(let error):
-                    completion(.failure(error))
+                case .failure(_):
                     break
-                case .success(let userData):
-                    self.isFilter = true
-                    self.userListFilter = [userData]
-                    completion(.success(()))
+                case .success(let imageData):
+                    self.listOfImageData.updateValue(imageData, forKey: user.userId)
                     break
                 }
             }
         }
+    }
 }
 

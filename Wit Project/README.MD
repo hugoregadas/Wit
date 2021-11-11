@@ -45,6 +45,7 @@ Esta aplicação recebe e trata informação de users de uma API Externa
 - [ ] Loading
 - [x] Fetch Images +/-
 - [ ] Swipe between User details (previous and next)
+- [ ] Testes Unitários
 - [ ] Improve readme.md with app architecture
 
 
