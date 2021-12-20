@@ -23,12 +23,10 @@ class UserDetailsTableViewCell: UITableViewCell {
         // Configure the view for the selected state
     }
     
-    func configureCell(viewModel: UserDetailsViewModel, indexPath: IndexPath) {
-        let firstObject = viewModel.arrayInfo[indexPath.row]
-        
-        titleLabel.text = firstObject[0]
-        detailLabel.text = firstObject[1]
-        
+    //MARK: - Public Methods
+    func configureCell(viewModel: UserDetailsCellViewModel) {
+        titleLabel.text = viewModel.title
+        detailLabel.text = viewModel.details
     }
     
 }

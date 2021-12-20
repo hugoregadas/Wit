@@ -5,54 +5,31 @@
 //  Created by Hugo Regadas on 23/09/2021.
 //
 
-
-/// Roles View controller
-///
-///  1 - IBOutlets
-///  2 - Properties
-///  3 - Life cycle ViewController
-///  4 - UI
-///  5 - Delegates
-///  6 - Actions
-///  7 - Segue
-
 import UIKit
 
 class SearchScreenViewController: UIViewController {
-    // IBOutlets
+    //MARK: - IBOutlets
     @IBOutlet weak var tableView: UITableView!
     @IBOutlet weak var searchBar: UISearchBar!
-    @IBOutlet weak var loading: UIActivityIndicatorView! {
-        didSet {
-            loading.hidesWhenStopped = true
-        }
-    }
     
-    //Properties
-    private let viewModel = SearchScreenViewModel()
-}
-
-//MARK: - Life cycle ViewController
-extension SearchScreenViewController {
+    //MARK: - Properties
+    private let viewModel = SearchScreenViewModel(serviceAPI: ServiceManager.shared)
+    
+    //MARK: - Life cycle ViewController
     override func viewDidLoad() {
         super.viewDidLoad()
         initUI()
     }
+    
 }
 
-// MARK: - Extension: Init User Interface (UI)
+// MARK: - Extension: Init User Interface
 extension SearchScreenViewController {
     func initUI(){
         initTableView()
         initSearchBar()
         fetchUsersGitHub()
-        title = "User List"
-        
-        self.viewModel.bindViewModelToController = {
-            DispatchQueue.main.async {
-                self.tableView.reloadData()
-            }
-        }
+        title = viewModel.titleView
     }
     
     func initTableView(){
@@ -64,37 +41,79 @@ extension SearchScreenViewController {
     }
     
     func initSearchBar(){
-        searchBar.placeholder = "Search"
+        searchBar.placeholder = viewModel.searchBarPlaceholder
         searchBar.delegate = self
+    }
+    
+    func fetchUsersGitHub(){
+        viewModel.fetchGithubUsers(completion: { result in
+            switch result {
+            case .failure(let error):
+                self.showError(error)
+                break
+            case .success():
+                DispatchQueue.main.async {
+                    self.tableView.reloadData()
+                }
+                break
+            }
+        })
+    }
+    
+    func showError(_ error: Error) {
+        DispatchQueue.main.async {
+            let title = self.viewModel.titleAlert
+            let message = error.localizedDescription
+            let buttonTitle = self.viewModel.titleAlert
+            let alert = UIAlertController(title: title, message: message, preferredStyle: .alert)
+            alert.addAction(UIAlertAction(title: buttonTitle, style: .default, handler: nil))
+            self.present(alert, animated: true, completion: nil)
+        }
     }
 }
 
 // MARK: - Extension: TableView Delegate and Data Source
 extension SearchScreenViewController : UITableViewDelegate, UITableViewDataSource {
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        if (viewModel.isFilter){
-            return viewModel.userListFilter.count
-        }else{
-            return viewModel.usersList.count
-        }
+        return viewModel.numberOfRows()
     }
     
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         let cell = tableView.dequeueReusableCell(withIdentifier: "ListUserTableViewCell", for: indexPath) as! ListUserTableViewCell
-        cell.configureCell(viewModel: viewModel, indexPath: indexPath)
+        cell.configureCell(viewModel: viewModel.configureUserCellViewModel(at: indexPath.row))
         return cell
+    }
+    
+    func tableView(_ tableView: UITableView, willDisplay cell: UITableViewCell, forRowAt indexPath: IndexPath) {
+        if(!viewModel.isFilter){
+            let lastRowIndex = tableView.numberOfRows(inSection: 0) - 1
+            
+            if indexPath.row == lastRowIndex {
+                fetchUsersGitHub()
+            }
+        }
     }
     
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         viewModel.selectedItem(withIndexPath: indexPath)
-        tableView.deselectRow(at: indexPath, animated: false)
-        searchBar.endEditing(true)
-        performSegue(withIdentifier: "SegueDetails", sender: self)
+        let storyboard = UIStoryboard.init(name: "Main", bundle: nil)
+    
+        let vc = storyboard.instantiateViewController(identifier: "UserDetailsViewController",
+                                                            creator: { aDecoder in
+            return UserDetailsViewController(viewModel: self.viewModel.configureUserDetailsViewModel(), coder: aDecoder)
+        })
+        
+        navigationController?.pushViewController(vc, animated: true)
     }
 }
 
-//MARK: - Extension: SearchBar Delegate
+//MARK: - Extension Delegate SearchBar
+
 extension SearchScreenViewController : UISearchBarDelegate {
+    func searchBarTextDidEndEditing(_ searchBar: UISearchBar) {
+        searchBar.endEditing(true)
+    }
+    
     func searchBarSearchButtonClicked(_ searchBar: UISearchBar) {
         searchBar.endEditing(true)
         if (searchBar.text?.count != 0){
@@ -112,60 +131,6 @@ extension SearchScreenViewController : UISearchBarDelegate {
             }
         }else {
             fetchUsersGitHub()
-        }
-    }
-}
-
-// MARK: - Extension: Actions
-extension SearchScreenViewController {
-    ///  Button to fetch more users
-    @IBAction func moreUsers(_ sender: UIBarButtonItem) {
-        fetchUsersGitHub()
-    }
-    
-    func fetchUsersGitHub(){
-        loading.startAnimating()
-        viewModel.fetchGithubUsers(completion: { result in
-            DispatchQueue.main.async {
-                self.loading.stopAnimating()
-                switch result {
-                case .failure(let error):
-                    self.showError(error)
-                    break
-                case .success():
-                    DispatchQueue.main.async {
-                        self.tableView.reloadData()
-                    }
-                    break
-                }
-            }
-        })
-    }
-    
-    /// When fetch fail action o show error
-    func showError(_ error: Error) {
-        DispatchQueue.main.async {
-            let title = "Alerta"
-            let message = error.localizedDescription
-            let buttonTitle = "OK"
-            let alert = UIAlertController(title: title, message: message, preferredStyle: .alert)
-            alert.addAction(UIAlertAction(title: buttonTitle, style: .default, handler: nil))
-            self.present(alert, animated: true, completion: nil)
-        }
-    }
-}
-
-// MARK: - Extension: Segue
-extension SearchScreenViewController {
-    override func prepare(for segue: UIStoryboardSegue, sender: Any?) {
-        let vc = segue.destination as! UserDetailsViewController
-        
-        if let selectedItem = viewModel.selectedItem {
-            vc.viewModel.username = selectedItem.login
-            vc.viewModel.idObject = selectedItem.idObject
-        }else if let selectedItemFilter = viewModel.selectedItemFilter{
-            vc.viewModel.username = selectedItemFilter.login
-            vc.viewModel.idObject = selectedItemFilter.idObject
         }
     }
 }

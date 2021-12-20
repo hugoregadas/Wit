@@ -23,10 +23,9 @@ class ListUserTableViewCell: UITableViewCell {
         // Configure the view for the selected state
     }
     
-    func configureCell(viewModel: SearchScreenViewModel, indexPath: IndexPath) {
-        viewModel.configInfoTableViewTo(indexPath: indexPath)
-        userNameLabel.text = viewModel.loginName
-        userImage.image = viewModel.imageUser
+    func configureCell(viewModel: FactoryUserCellProtocol) {
+        userNameLabel.text = viewModel.title
+        userImage.image = viewModel.image
     }
     
 }

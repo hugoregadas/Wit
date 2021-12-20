@@ -44,6 +44,10 @@ Esta aplicação recebe e trata informação de users de uma API Externa
 - [x] Set app launch screen
 - [ ] Loading
 - [x] Fetch Images +/-
+- [x] Factory Patterns
+- [x] MVVM Patterns
+- [x] Singloton
+- [x] Dependency Injection
 - [ ] Swipe between User details (previous and next)
 - [ ] Testes Unitários
 - [ ] Improve readme.md with app architecture

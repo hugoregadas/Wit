@@ -9,13 +9,23 @@ import UIKit
 
 //MARK: - ViewModel Properties and methods
 class UserDetailsViewModel {
-    //MARK: - Properties
-    private let serviceAPI = ServiceManager.shared
-    var username: String?
-    var idObject: Int?
+    //MARK: - Private Var
+    private let serviceAPI: ServiceManager
+    private var username: String
+    private var idObject: Int
+    private var arrayInfo = [[String]]()
+
+    
+    //MARK: - Public Var
     let viewTitle = "User"
-    var arrayInfo = [[String]]()
     var userInfoImage: UIImage?
+    
+    //MARK: - Initializer by ID
+    init(userName: String = "", idObject: Int = 0, serviceApi: ServiceManager){
+        self.username = userName
+        self.idObject = idObject
+        self.serviceAPI = serviceApi
+    }
 }
 
 // MARK: - Extension: Supporting Methods
@@ -80,7 +90,6 @@ extension UserDetailsViewModel {
 // MARK: - Extension: Service Methods
 extension UserDetailsViewModel {
     func getUserInfo(completion: @escaping (Result<Void, Error>) -> Void){
-        if let username = username, let idObject = idObject {
             serviceAPI.getUserInfo(userName: username, idObject: "\(idObject)") { result in
                 switch result {
                 case .failure(let error):
@@ -93,7 +102,6 @@ extension UserDetailsViewModel {
                     break
                 }
             }
-        }
     }
     
     private func configureViewAndGetImages(_ infoUser: InfoUserObject, completion: @escaping () -> Void ){
@@ -105,7 +113,7 @@ extension UserDetailsViewModel {
         let group = DispatchGroup()
         group.enter()
         
-        self.serviceAPI.getImageUserInfoWith(url: URL(string: urlImage)!, idFile: String(idObject!)) { result in
+        self.serviceAPI.getImageUserInfoWith(url: URL(string: urlImage)!, idFile: String(idObject)) { result in
             switch result {
             case .failure(_):
                 group.leave()
@@ -120,5 +128,19 @@ extension UserDetailsViewModel {
         group.notify(queue: .main) {
             completion()
         }
+    }
+}
+
+//MARK: - Data Source
+extension UserDetailsViewModel {
+    func numberOfRows() -> Int {
+        return arrayInfo.count
+    }
+}
+
+//MARK: - Configure View ModelUserDetailsCellViewModel
+extension UserDetailsViewModel {
+    func configureViewModel(at index: Int)-> UserDetailsCellViewModel{
+        return UserDetailsCellViewModel(arrayInfo: arrayInfo, index: index)
     }
 }

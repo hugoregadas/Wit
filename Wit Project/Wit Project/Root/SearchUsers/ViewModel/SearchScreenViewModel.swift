@@ -9,57 +9,32 @@ import UIKit
 
 //MARK: - ViewModel Properties and methods
 class SearchScreenViewModel {
-    //MARK: - Properties
-    // Service API
-    private let serviceAPI = ServiceManager.shared
+    //MARK: -  Private var
+    private let serviceAPI: ServiceManager
+    private var listOfImageData = [Int: Data]()
+    private var usersList =  [UsersObject]()
+    private var userListFilter = [InfoUserObject]()
+    private var selectedItem: UsersObject?
+    private var selectedItemFilter: InfoUserObject?
+    private var loginName = ""
+    private var imageUser = UIImage()
     
-    // use to save id and image
-    private var listOfImageData = [Int: Data]() {
-        didSet {
-            if (!listOfImageData.isEmpty) {
-                self.bindViewModelToController()
-            }
-        }
+    //MARK: -  Public var
+    var isFilter = false
+    var titleView = "User List"
+    var searchBarPlaceholder = "Search"
+    var titleAlert = "Alerta"
+    var buttonAlert = "OK"
+    
+    //MARK: - Initizaliers by ID
+    init (serviceAPI: ServiceManager){
+        self.serviceAPI = serviceAPI
     }
-    
-    /// Used to save all github Users
-    private (set) var usersList =  [UsersObject]()
-    private (set) var userListFilter = [InfoUserObject]()
-    private (set) var selectedItem: UsersObject?
-    private (set) var selectedItemFilter: InfoUserObject?
-    private (set) var loginName = ""
-    private (set) var imageUser = UIImage()
-    private (set) var isFilter = false
-    
-
-    var bindViewModelToController : (() -> ()) = {}
 }
 
 // MARK: - Extension: Supporting Methods
 extension SearchScreenViewModel {
-    /// Configure  data to show in tableView
-    func configInfoTableViewTo(indexPath: IndexPath){
-        var objId: Int
-        if isFilter {
-            let obj = userListFilter[indexPath.row]
-            objId = obj.idObject
-            loginName = obj.login
-        }else{
-            let obj = usersList[indexPath.row]
-            objId = obj.idObject
-            loginName = obj.login
-        }
-        
-        
-        guard let data = listOfImageData[objId] else {
-            imageUser = UIImage(named: "1024")!
-            return
-        }
-        
-        imageUser = UIImage(data: data)!
-    }
     
-    /// method to select Item
     func selectedItem(withIndexPath index: IndexPath){
         selectedItem = nil
         selectedItemFilter = nil
@@ -97,6 +72,23 @@ extension SearchScreenViewModel {
         }
     }
     
+    // method to fetch images gitHub users
+    private func configureViewAndGetImages(withArray imageInfo: [(urlAvatar: String ,userId: Int)]){
+        /// Dispatch group used to sync all Service APi and to notify the getUserListFromService method that he can complete his task
+        
+        for user in imageInfo {
+            self.serviceAPI.getImageUserInfoWith(url: URL(string: user.urlAvatar)!, idFile: "\(user.userId)") { result in
+                switch result {
+                case .failure(_):
+                    break
+                case .success(let imageData):
+                    self.listOfImageData.updateValue(imageData, forKey: user.userId)
+                    break
+                }
+            }
+        }
+    }
+    
     //Method to fetch user
     func getUser(WithName username: String, completion: @escaping (Result<Void, Error>) -> Void){
         serviceAPI.getUserInfo(userName: username) { result in
@@ -117,24 +109,41 @@ extension SearchScreenViewModel {
 
                 break
             }
-        }
-    }
-    
-    // method to fetch images gitHub users
-    private func configureViewAndGetImages(withArray imageInfo: [(urlAvatar: String ,userId: Int)]){
-        /// Dispatch group used to sync all Service APi and to notify the getUserListFromService method that he can complete his task
-        
-        for user in imageInfo {
-            self.serviceAPI.getImageUserInfoWith(url: URL(string: user.urlAvatar)!, idFile: "\(user.userId)") { result in
-                switch result {
-                case .failure(_):
-                    break
-                case .success(let imageData):
-                    self.listOfImageData.updateValue(imageData, forKey: user.userId)
-                    break
-                }
             }
+        }
+}
+
+//MARK: - Data Source
+extension SearchScreenViewModel {
+    func numberOfRows() -> Int {
+        if isFilter {
+            return userListFilter.count
+        }else {
+            return usersList.count
         }
     }
 }
+
+// MARK: - Extension: Configure UserCellViewModel
+extension SearchScreenViewModel {
+    func configureUserCellViewModel(at index: Int) -> FactoryUserCellProtocol{
+        if isFilter {
+            return UserFilterCellViewModel(self.userListFilter[index], imageList: listOfImageData)
+        }else {
+            return UserCellViewModel(usersList[index], imageList: listOfImageData)
+        }
+    }
+}
+
+// MARK: - Extension: Configure UserDetailsViewModel
+extension SearchScreenViewModel {
+    func configureUserDetailsViewModel() -> UserDetailsViewModel{
+        if isFilter {
+            return UserDetailsViewModel(userName: selectedItemFilter!.login, idObject: selectedItemFilter!.idObject, serviceApi: serviceAPI)
+        }else {
+            return UserDetailsViewModel(userName: selectedItem!.login, idObject: selectedItem!.idObject, serviceApi: serviceAPI)
+        }
+    }
+}
+
 

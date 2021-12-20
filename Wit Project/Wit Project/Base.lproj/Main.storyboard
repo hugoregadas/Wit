@@ -28,41 +28,23 @@
                                 </constraints>
                                 <textInputTraits key="textInputTraits"/>
                             </searchBar>
-                            <activityIndicatorView opaque="NO" contentMode="scaleToFill" horizontalHuggingPriority="750" verticalHuggingPriority="750" style="medium" translatesAutoresizingMaskIntoConstraints="NO" id="4oo-vP-TSj">
-                                <rect key="frame" x="182" y="423" width="50" height="50"/>
-                                <constraints>
-                                    <constraint firstAttribute="height" constant="50" id="O4i-x6-O5q"/>
-                                    <constraint firstAttribute="width" constant="50" id="hq9-jA-uAH"/>
-                                </constraints>
-                            </activityIndicatorView>
                         </subviews>
                         <viewLayoutGuide key="safeArea" id="6Tk-OE-BBY"/>
                         <color key="backgroundColor" systemColor="systemBackgroundColor"/>
-                        <gestureRecognizers/>
                         <constraints>
-                            <constraint firstItem="4oo-vP-TSj" firstAttribute="centerY" secondItem="8bC-Xf-vdC" secondAttribute="centerY" id="7Nl-9c-vQG"/>
                             <constraint firstItem="6Tk-OE-BBY" firstAttribute="trailing" secondItem="oPd-5U-TZ9" secondAttribute="trailing" id="BdC-nO-W1y"/>
                             <constraint firstItem="1PH-5H-pvk" firstAttribute="leading" secondItem="6Tk-OE-BBY" secondAttribute="leading" id="CML-Zb-baC"/>
                             <constraint firstItem="6Tk-OE-BBY" firstAttribute="bottom" secondItem="oPd-5U-TZ9" secondAttribute="bottom" id="CTy-Nd-fx2"/>
-                            <constraint firstItem="4oo-vP-TSj" firstAttribute="centerX" secondItem="8bC-Xf-vdC" secondAttribute="centerX" id="HIh-4O-If1"/>
                             <constraint firstItem="1PH-5H-pvk" firstAttribute="top" secondItem="6Tk-OE-BBY" secondAttribute="top" id="IW4-iJ-ujB"/>
                             <constraint firstItem="oPd-5U-TZ9" firstAttribute="top" secondItem="1PH-5H-pvk" secondAttribute="bottom" id="J64-1t-qE5"/>
                             <constraint firstItem="oPd-5U-TZ9" firstAttribute="leading" secondItem="6Tk-OE-BBY" secondAttribute="leading" id="Rm4-AY-BPH"/>
                             <constraint firstItem="1PH-5H-pvk" firstAttribute="trailing" secondItem="6Tk-OE-BBY" secondAttribute="trailing" id="gLo-rE-rMS"/>
                         </constraints>
                     </view>
-                    <navigationItem key="navigationItem" largeTitleDisplayMode="always" id="ZEu-iG-GQy">
-                        <barButtonItem key="rightBarButtonItem" title="more" id="3Cs-m1-0F9">
-                            <connections>
-                                <action selector="moreUsers:" destination="BYZ-38-t0r" id="nZg-sJ-j7r"/>
-                            </connections>
-                        </barButtonItem>
-                    </navigationItem>
+                    <navigationItem key="navigationItem" id="ZEu-iG-GQy"/>
                     <connections>
-                        <outlet property="loading" destination="4oo-vP-TSj" id="CMk-GP-3ZV"/>
                         <outlet property="searchBar" destination="1PH-5H-pvk" id="fAw-MM-VN1"/>
                         <outlet property="tableView" destination="oPd-5U-TZ9" id="EsG-dm-DbZ"/>
-                        <segue destination="5zO-Wi-b9e" kind="show" identifier="SegueDetails" id="KCd-ry-NBk"/>
                     </connections>
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="dkx-z0-nzr" sceneMemberID="firstResponder"/>
@@ -72,17 +54,17 @@
         <!--User Details View Controller-->
         <scene sceneID="3eA-dX-Am9">
             <objects>
-                <viewController wantsFullScreenLayout="YES" id="5zO-Wi-b9e" customClass="UserDetailsViewController" customModule="Wit_Project" customModuleProvider="target" sceneMemberID="viewController">
+                <viewController storyboardIdentifier="UserDetailsViewController" wantsFullScreenLayout="YES" id="5zO-Wi-b9e" customClass="UserDetailsViewController" customModule="Wit_Project" customModuleProvider="target" sceneMemberID="viewController">
                     <view key="view" contentMode="scaleToFill" id="25T-ac-64d">
                         <rect key="frame" x="0.0" y="0.0" width="414" height="896"/>
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                         <subviews>
                             <tableView clipsSubviews="YES" contentMode="scaleToFill" alwaysBounceVertical="YES" dataMode="prototypes" style="plain" separatorStyle="default" rowHeight="-1" estimatedRowHeight="-1" sectionHeaderHeight="28" sectionFooterHeight="28" translatesAutoresizingMaskIntoConstraints="NO" id="CaE-kI-Bse">
-                                <rect key="frame" x="0.0" y="258" width="414" height="604"/>
+                                <rect key="frame" x="0.0" y="214" width="414" height="648"/>
                                 <color key="backgroundColor" systemColor="systemBackgroundColor"/>
                             </tableView>
                             <imageView clipsSubviews="YES" userInteractionEnabled="NO" contentMode="scaleAspectFit" horizontalHuggingPriority="251" verticalHuggingPriority="251" translatesAutoresizingMaskIntoConstraints="NO" id="8FI-nv-VC5">
-                                <rect key="frame" x="132" y="98" width="150" height="150"/>
+                                <rect key="frame" x="132" y="54" width="150" height="150"/>
                                 <constraints>
                                     <constraint firstAttribute="height" constant="150" id="3bO-29-PtI"/>
                                     <constraint firstAttribute="width" constant="150" id="ucM-5h-8kz"/>
@@ -102,8 +84,8 @@
                     </view>
                     <navigationItem key="navigationItem" id="Mw2-5B-vWH"/>
                     <connections>
-                        <outlet property="imageView" destination="8FI-nv-VC5" id="1Ee-6W-4bq"/>
-                        <outlet property="tableView" destination="CaE-kI-Bse" id="khp-Km-del"/>
+                        <outlet property="imageView" destination="8FI-nv-VC5" id="F7U-XZ-n7M"/>
+                        <outlet property="tableView" destination="CaE-kI-Bse" id="x4H-xn-TO5"/>
                     </connections>
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="3Dw-K9-7am" userLabel="First Responder" customClass="UIResponder" sceneMemberID="firstResponder"/>
